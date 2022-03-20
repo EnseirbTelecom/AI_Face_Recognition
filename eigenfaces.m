@@ -30,38 +30,135 @@ Nc = length(cls_trn);
 % Number of training images in each class
 size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
 
-mean_face_ligne = mean(data_trn,2);
-mean_face = reshape(mean_face_ligne,192,168);
-Image_mean=mat2gray(mean_face);
-imwrite(Image_mean,'meanface.bmp','bmp');
-figure,
-imagesc(mean_face);
-colormap(gray);
+% mean_face_ligne = mean(data_trn,2);
+% mean_face = reshape(mean_face_ligne,192,168);
+% Image_mean=mat2gray(mean_face);
+% imwrite(Image_mean,'meanface.bmp','bmp');
+% figure,
+% imagesc(mean_face);
+% colormap(gray);
 
 % centraliser
-X = [];
-for i = 1:60
-    X(:,i) = (data_trn(:,i) - mean_face_ligne)/sqrt(60); % (p * n ) avec p = 32256, n = 60 = > X
-end
+% X = [];
+% for i = 1:60
+%     X(:,i) = (data_trn(:,i) - mean_face_ligne)/sqrt(60); % (p * n ) avec p = 32256, n = 60 = > X
+% end
 
-R = X * X'; % 32256*32256
+% meme resultat, plus simple pour matlab qu'une boucle for
+X_mean_emp = 1/N * sum(data_trn,2);
+X_centered = data_trn - X_mean_emp;
+X = 1/sqrt(N) * X_centered;
+
+% R = X * X'; % 32256*32256 ==> je la commente, mon pc meurt en la
+% calculant
 
 R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
 [eigenvector,eigenvalue]=eigs(R_gram,60);
 U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
-figure,
-% eigenfaces
+
+
+figure(1)
+sgtitle("The 60 eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
+% affichage des eigenfaces
 for i = 1:60
     subplot(6,10,i);
-    t = reshape(U(:,i),192,168);
-    imagesc(t);
+    imagesc(U(:,i));
     colormap(gray);
 end
 
-l = 10; % 低维 % 对6个不同的图像进行低维投射
-recons = [];
-UL = U(:,1:10);
+figure(2)
+sgtitle("Reshaped eigenfaces");
+for i = 1:60
+    subplot(6,10,i);
+    img = U(:,i);
+    img = reshape(img,192,168);
+    imagesc(img);
+    colormap(gray);
+end
+%% RECONSTRUCTION DES IMAGES
+
+l_values=[2,10,20,30,40,50]; % dimension du facespace, l <= n
+imgs  = zeros(P,36);
+imgsM = zeros(P,36);
+
+for loop=1:36
+    idx = bd(ceil(loop/6));
+    [img, imgM]   = eigenfaces_builder(data_trn(:,idx), U, l_values(mod(loop-1,6)+1), X_mean_emp);
+    imgs(:,loop)  = img;
+    imgsM(:,loop) = imgM;
+end
+
+imgs = reshape_imgs(imgs, 6,6);
+imgsM = reshape_imgs(imgsM,6,6);
+
+% display
+f = figure(3);
+imagesc(imgs);
+% Changement d'axes
+ax = get(f,'Children'); % on extrait l'objet Axis de la figure
+
+% intervalles de ticks pour qu'ils soient centres
+Xticks = 84:168:1008;
+Yticks = 96:192:1152;
+
+% on change les ticks sur les axes X et Y
+ax.XTick = Xticks;
+ax.YTick = Yticks;
+
+% On extrait les objets NumericRulers qui correspondent aux axes
+XA = get(ax,'XAxis');
+YA = get(ax,'YAxis');
+
+% On change le texte affiche sur l'axe pour les valeurs souhaitees
+XA.TickLabels = l_values;
+YA.TickLabels = cls_trn;
+
+colormap(gray);
+title("Reconstruction test");
+ylabel("Class of the image");
+xlabel("Dimension of the facespace");
+
+% display
+f = figure(4);
+imagesc(imgsM);
+
+% Changement d'axes
+ax = get(f,'Children'); % on extrait l'objet Axis de la figure
+
+% on change les ticks sur les axes X et Y
+ax.XTick = Xticks;
+ax.YTick = Yticks;
+
+% On extrait les objets NumericRulers qui correspondent aux axes
+XA = get(ax,'XAxis');
+YA = get(ax,'YAxis');
+
+% On change le texte affiche sur l'axe pour les valeurs souhaitees
+XA.TickLabels = l_values;
+YA.TickLabels = cls_trn;
+
+colormap(gray);
+title("Reconstruction test with recentering");
+ylabel("Class of the image");
+xlabel("Dimension of the facespace");
+
+
+% img = reshape(img,192,168); % imagesc can't reshape automatically, strange
+% fprintf("Generated image with idx=%d and l_value=%d\n",idx,l_values(mod(loop-1,6)+1));
+% 
+% imagesc(img); colormap(gray);
+    
+
+
+
+% 
+% l = 10; % 低维 % 对6个不同的图像进行低维投射
+% recons = [];
+% UL = U(:,1:10);
+
+
+
 % for i = 1:60
 %     for j = 1:l
 %         recons(:,i) = recons(:,i) + U(:,j)'*X(:,i)*U(:,j);
