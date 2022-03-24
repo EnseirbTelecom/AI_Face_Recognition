@@ -54,7 +54,7 @@ X = 1/sqrt(N) * X_centered;
 
 R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
-[eigenvector,eigenvalue]=eigs(R_gram,60);
+[eigenvector,eigenvalue]=eigs(R_gram,length(R_gram));
 U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
 
 U = real(U); % pour Matlab R2021b
@@ -63,16 +63,16 @@ U = real(U); % pour Matlab R2021b
 figure(1)
 sgtitle("The 60 eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
 % affichage des eigenfaces
-for i = 1:60
-    subplot(6,10,i);
+for i = 1:length(R_gram)
+    subplot(6,length(R_gram)/6,i);
     imagesc(U(:,i));
     colormap(gray);
 end
 
 figure(2)
 sgtitle("Reshaped eigenfaces");
-for i = 1:60
-    subplot(6,10,i);
+for i = 1:length(R_gram)
+    subplot(6,length(R_gram)/6,i);
     img = U(:,i);
     img = reshape(img,192,168);
     imagesc(img);
@@ -81,6 +81,7 @@ end
 %% RECONSTRUCTION DES IMAGES
 
 l_values=[2,10,20,30,40,50]; % dimension du facespace, l <= n % 投影的维度
+l_values=[2,5,10,15, 20, 25]; % pour 30
     imgs  = zeros(P,36);
 imgsM = zeros(P,36);
 
