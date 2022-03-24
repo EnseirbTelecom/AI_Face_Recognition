@@ -56,7 +56,9 @@ R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
 [eigenvector,eigenvalue]=eigs(R_gram,60);
 U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
-U = real(U);
+
+U = real(U); % pour Matlab R2021b
+
 
 figure(1)
 sgtitle("The 60 eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
