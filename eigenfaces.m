@@ -25,7 +25,7 @@ end
 % Classes contained in the training set
 [~,I]=sort(lb_trn);
 data_trn = data_trn(:,I); % 
-[cls_trn,bd,~] = unique(lb_trn);
+[cls_trn,bd,~] = unique(lb_trn); % 
 Nc = length(cls_trn); 
 % Number of training images in each class
 size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
@@ -45,7 +45,7 @@ size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
 % end
 
 % meme resultat, plus simple pour matlab qu'une boucle for
-X_mean_emp = 1/N * sum(data_trn,2);
+X_mean_emp = 1/N * sum(data_trn,2); % mean_face_ligne
 X_centered = data_trn - X_mean_emp;
 X = 1/sqrt(N) * X_centered;
 
@@ -56,7 +56,7 @@ R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
 [eigenvector,eigenvalue]=eigs(R_gram,60);
 U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
-
+U = real(U);
 
 figure(1)
 sgtitle("The 60 eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
@@ -78,8 +78,8 @@ for i = 1:60
 end
 %% RECONSTRUCTION DES IMAGES
 
-l_values=[2,10,20,30,40,50]; % dimension du facespace, l <= n
-imgs  = zeros(P,36);
+l_values=[2,10,20,30,40,50]; % dimension du facespace, l <= n % 投影的维度
+    imgs  = zeros(P,36);
 imgsM = zeros(P,36);
 
 for loop=1:36
@@ -87,7 +87,12 @@ for loop=1:36
     [img, imgM]   = eigenfaces_builder(data_trn(:,idx), U, l_values(mod(loop-1,6)+1), X_mean_emp);
     imgs(:,loop)  = img;
     imgsM(:,loop) = imgM;
+    imgvalue(:,loop) = imgs(:,loop)'*imgs(:,loop);
+    imgvalue_original(:,loop) = data_trn(:,idx)'*data_trn(:,idx);
 end
+
+ratio = imgvalue./imgvalue_original;
+
 
 imgs = reshape_imgs(imgs, 6,6);
 imgsM = reshape_imgs(imgsM,6,6);
@@ -143,7 +148,11 @@ title("Reconstruction test with recentering");
 ylabel("Class of the image");
 xlabel("Dimension of the facespace");
 
+%% ratio de l'energie de projection
 
+
+
+%%
 % img = reshape(img,192,168); % imagesc can't reshape automatically, strange
 % fprintf("Generated image with idx=%d and l_value=%d\n",idx,l_values(mod(loop-1,6)+1));
 % 
