@@ -6,7 +6,7 @@ close all;
 
 %% Data extraction
 % Training set
-adr = './database/training1/';
+adr = './database/training2/';
 fld = dir(adr);
 nb_elt = length(fld);
 % Data matrix containing the training images in its columns 
@@ -29,6 +29,9 @@ data_trn = data_trn(:,I); %
 Nc = length(cls_trn); 
 % Number of training images in each class
 size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
+
+lines = max(size_cls_trn); % no. of lines per subplot
+cols  = Nc;                % no. of columns per subplot
 
 % mean_face_ligne = mean(data_trn,2);
 % mean_face = reshape(mean_face_ligne,192,168);
@@ -54,28 +57,49 @@ X = 1/sqrt(N) * X_centered;
 
 R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
-[eigenvector,eigenvalue]=eigs(R_gram,60);
+[eigenvector,eigenvalue]=eigs(R_gram,N);
 U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
-U = real(U); % pour Matlab R2021b
+
+U = real(U);
 
 figure(1)
-sgtitle("The 60 eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
+sgtitle("The eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
 % affichage des eigenfaces
-for i = 1:60
-    subplot(6,10,i);
+nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
+currClass    = 1;                % classe a afficher
+offset       = 1;                % decalage dans la classe
+for i = 1:N
+    if i>nextBoundary
+        currClass = currClass+1;
+        nextBoundary = nextBoundary + size_cls_trn();
+        offset=1;
+    end
+    subplot(cols,lines,(currClass-1)*lines+offset);
     imagesc(U(:,i));
     colormap(gray);
+    offset=offset+1;
 end
 
 figure(2)
 sgtitle("Reshaped eigenfaces");
-for i = 1:60
-    subplot(6,10,i);
+nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
+currClass    = 1;                % classe a afficher
+offset       = 1;                % decalage dans la classe
+for i = 1:N
+    if i>nextBoundary
+        currClass = currClass+1;
+        nextBoundary = nextBoundary + size_cls_trn();
+        offset=1;
+    end
+    subplot(cols,lines,(currClass-1)*lines+offset);
+    
     img = U(:,i);
     img = reshape(img,192,168);
     imagesc(img);
     colormap(gray);
+    offset=offset+1;
 end
+
 %% RECONSTRUCTION DES IMAGES
 
 l_values=[2,10,20,30,40,50]; % dimension du facespace, l <= n
