@@ -102,19 +102,21 @@ end
 
 %% RECONSTRUCTION DES IMAGES
 
-l_values=[2,10,20,30,40,50]; % dimension du facespace, l <= n
+l_values=2:N/6:N; % dimension du facespace, l <= n
+Nimg = length(l_values);    % nombre d'images de classe différentes
+Nrec = Nc*Nimg;            % Nombre d'images reconstruites au total
 imgs  = zeros(P,36);
 imgsM = zeros(P,36);
 
-for loop=1:36
-    idx = bd(ceil(loop/6));
-    [img, imgM]   = eigenfaces_builder(data_trn(:,idx), U, l_values(mod(loop-1,6)+1), X_mean_emp);
+for loop=1:Nrec
+    idx = bd(ceil(loop/Nimg));
+    [img, imgM]   = eigenfaces_builder(data_trn(:,idx), U, l_values(mod(loop-1,Nimg)+1), X_mean_emp);
     imgs(:,loop)  = img;
     imgsM(:,loop) = imgM;
 end
 
-imgs = reshape_imgs(imgs, 6,6);
-imgsM = reshape_imgs(imgsM,6,6);
+imgs = reshape_imgs(imgs, Nimg,Nimg);
+imgsM = reshape_imgs(imgsM,Nimg,Nimg);
 
 % display
 f = figure(3);
