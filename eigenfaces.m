@@ -25,7 +25,7 @@ end
 % Classes contained in the training set
 [~,I]=sort(lb_trn);
 data_trn = data_trn(:,I); % 
-[cls_trn,bd,~] = unique(lb_trn);
+[cls_trn,bd,~] = unique(lb_trn); % 
 Nc = length(cls_trn); 
 % Number of training images in each class
 size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
@@ -48,7 +48,7 @@ cols  = Nc;                % no. of columns per subplot
 % end
 
 % meme resultat, plus simple pour matlab qu'une boucle for
-X_mean_emp = 1/N * sum(data_trn,2);
+X_mean_emp = 1/N * sum(data_trn,2); % mean_face_ligne
 X_centered = data_trn - X_mean_emp;
 X = 1/sqrt(N) * X_centered;
 
@@ -57,10 +57,13 @@ X = 1/sqrt(N) * X_centered;
 
 R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
+
 [eigenvector,eigenvalue]=eigs(R_gram,N);
 U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
 
 U = real(U);
+
+
 
 figure(1)
 sgtitle("The eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
@@ -82,6 +85,7 @@ end
 
 figure(2)
 sgtitle("Reshaped eigenfaces");
+
 nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
 currClass    = 1;                % classe a afficher
 offset       = 1;                % decalage dans la classe
@@ -92,7 +96,6 @@ for i = 1:N
         offset=1;
     end
     subplot(cols,lines,(currClass-1)*lines+offset);
-    
     img = U(:,i);
     img = reshape(img,192,168);
     imagesc(img);
@@ -102,21 +105,28 @@ end
 
 %% RECONSTRUCTION DES IMAGES
 
+
 l_values=2:N/6:N; % dimension du facespace, l <= n
 Nimg = length(l_values);    % nombre d'images de classe différentes
 Nrec = Nc*Nimg;            % Nombre d'images reconstruites au total
-imgs  = zeros(P,36);
-imgsM = zeros(P,36);
+imgs  = zeros(P,Nrec);
+imgsM = zeros(P,Nrec);
 
 for loop=1:Nrec
     idx = bd(ceil(loop/Nimg));
     [img, imgM]   = eigenfaces_builder(data_trn(:,idx), U, l_values(mod(loop-1,Nimg)+1), X_mean_emp);
     imgs(:,loop)  = img;
     imgsM(:,loop) = imgM;
+    imgvalue(:,loop) = imgs(:,loop)'*imgs(:,loop);
+    imgvalue_original(:,loop) = data_trn(:,idx)'*data_trn(:,idx);
 end
+
 
 imgs = reshape_imgs(imgs, Nimg,Nimg);
 imgsM = reshape_imgs(imgsM,Nimg,Nimg);
+ratio = imgvalue./imgvalue_original;
+
+
 
 % display
 f = figure(3);
@@ -169,7 +179,11 @@ title("Reconstruction test with recentering");
 ylabel("Class of the image");
 xlabel("Dimension of the facespace");
 
+%% ratio de l'energie de projection
 
+
+
+%%
 % img = reshape(img,192,168); % imagesc can't reshape automatically, strange
 % fprintf("Generated image with idx=%d and l_value=%d\n",idx,l_values(mod(loop-1,6)+1));
 % 
