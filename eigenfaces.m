@@ -9,10 +9,10 @@ close all;
 adr = './database/training1/';
 fld = dir(adr);
 nb_elt = length(fld);
-% Data matrix containing the training images in its columns 
-data_trn = []; 
+% Data matrix containing the training images in its columns
+data_trn = [];
 % Vector containing the class of each training image
-lb_trn = []; 
+lb_trn = [];
 for i=1:nb_elt
     if fld(i).isdir == false
         lb_trn = [lb_trn ; str2num(fld(i).name(6:7))]; % ex: yaleB ' 01 '
@@ -24,36 +24,19 @@ end
 [P,N] = size(data_trn);
 % Classes contained in the training set
 [~,I]=sort(lb_trn);
-data_trn = data_trn(:,I); % 
-[cls_trn,bd,~] = unique(lb_trn); % 
-Nc = length(cls_trn); 
+data_trn = data_trn(:,I); %
+[cls_trn,bd,~] = unique(lb_trn); %
+Nc = length(cls_trn);
 % Number of training images in each class
 size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
 
 lines = max(size_cls_trn); % no. of lines per subplot
 cols  = Nc;                % no. of columns per subplot
 
-% mean_face_ligne = mean(data_trn,2);
-% mean_face = reshape(mean_face_ligne,192,168);
-% Image_mean=mat2gray(mean_face);
-% imwrite(Image_mean,'meanface.bmp','bmp');
-% figure,
-% imagesc(mean_face);
-% colormap(gray);
-
-% centraliser
-% X = [];
-% for i = 1:60
-%     X(:,i) = (data_trn(:,i) - mean_face_ligne)/sqrt(60); % (p * n ) avec p = 32256, n = 60 = > X
-% end
-
 % meme resultat, plus simple pour matlab qu'une boucle for
 X_mean_emp = 1/N * sum(data_trn,2); % mean_face_ligne
 X_centered = data_trn - X_mean_emp;
-X = 1/sqrt(N) * X_centered;
-
-% R = X * X'; % 32256*32256 ==> je la commente, mon pc meurt en la
-% calculant
+X = 1/sqrt(N) * X_centered; % il n'y a pas le X_mean
 
 R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
@@ -104,6 +87,7 @@ for i = 1:N
 end
 
 %% RECONSTRUCTION DES IMAGES
+
 
 
 l_values=2:N/6:N; % dimension du facespace, l <= n
@@ -179,6 +163,7 @@ title("Reconstruction test with recentering");
 ylabel("Class of the image");
 xlabel("Dimension of the facespace");
 
+
 figure(5)
 plot(l_values,ratio);
 legende=[];
@@ -188,7 +173,41 @@ end
 legend(legende);
 
 
-%% Classifieur gaussien
+
+%% Classifieur k-NN
+adr2 = './database/test1/yaleB09_P00A+010E+00.pgm';
+x_images_mat = reshape(double(imread(adr2)),192,168);
+x_images = reshape(x_images_mat,32256,1);
+
+
+% on choisit valeur de l
+l = 15;
+% on calculer la valeur de wx
+
+
+% calculer la distance, le prof a dit oublier la forme dans le
+% sujet,,, fait ce que il m'expliquer
+% au 1er temps, on calculer les distance de tous les images de training
+% et on faire sort de l'ordre croissant. donc on peut choisir valeur de
+% k, c'est la k valeur premier
+[Trainrows,Traincols] = size(X);
+[Testrows,Testcols] = size(x_images);
+
+
+
+for i = 1:Traincols
+    %     for j = 1:k
+    wx = Vecteur_composant_principale(l,x_images-X_mean_emp,U);
+    wx_train = Vecteur_composant_principale(l,X(:,i),U);
+    Vx(i) = sqrt(sum(wx-wx_train).^2);
+end
+dismin = min(Vx);
+Vx_sort = sort(Vx,'ascend');
+idx_dismin = find(Vx==dismin);
+k = 5; % a choisir
+[class, class_decide] = return_class(k,Vx_sort,Vx,lines,cls_trn);
+
+%% pré-classifieur gaussien
 
 l=60;
 
@@ -229,10 +248,10 @@ individus_means_imgs = [mean(:,1) mean(:,3) mean(:,6)];
 legendes = ["Image 1","Image 21","Image 51","Moyenne classe 1","Moyenne classe 3","Moyenne classe 6"];
 
 labels=["Projection onto u_1",
-         "Projection onto u_2",
-         "Projection onto u_3",
-         "Projection onto u_4",
-         "Projection onto u_5"];
+    "Projection onto u_2",
+    "Projection onto u_3",
+    "Projection onto u_4",
+    "Projection onto u_5"];
 
 figure(6)
 
@@ -258,12 +277,12 @@ err_rate=0;
 for idx=1:60
     img_to_classify = data_trn(:,idx); % pour tester
     img_mc = main_comp(img_to_classify, X_mean_emp, U, 60);
-
+    
     pred = zeros(6,1);
     for i=1:Nc % faut trouver pour arreter les boucles for
         pred(i) = (img_mc - mean(:,i)).' * sigma_inv * (img_mc - mean(:,i));
     end
-
+    
     [~,class] = min(pred);
     answer = floor((idx-1)/10)+1;
     fprintf("L'image %d est dans la classe %d\n",idx,class);
