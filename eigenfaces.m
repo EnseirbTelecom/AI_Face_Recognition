@@ -6,7 +6,7 @@ close all;
 
 %% Data extraction
 % Training set
-adr = './database/training2/';
+adr = './database/training1/';
 fld = dir(adr);
 nb_elt = length(fld);
 % Data matrix containing the training images in its columns 
@@ -122,10 +122,10 @@ for loop=1:Nrec
 end
 
 
-imgs = reshape_imgs(imgs, Nimg,Nimg);
-imgsM = reshape_imgs(imgsM,Nimg,Nimg);
+imgs = reshape_imgs(imgs, Nimg,Nc);
+imgsM = reshape_imgs(imgsM,Nimg,Nc);
 ratio = imgvalue./imgvalue_original;
-
+ratio = reshape(ratio,Nimg,Nc).';
 
 
 % display
@@ -179,58 +179,99 @@ title("Reconstruction test with recentering");
 ylabel("Class of the image");
 xlabel("Dimension of the facespace");
 
-%% ratio de l'energie de projection
+figure(5)
+plot(l_values,ratio);
+legende=[];
+for loop=1:Nc
+    legende = [legende "Classe "+cls_trn(loop)];
+end
+legend(legende);
 
 
+%% Classifieur gaussien
 
-%%
-% img = reshape(img,192,168); % imagesc can't reshape automatically, strange
-% fprintf("Generated image with idx=%d and l_value=%d\n",idx,l_values(mod(loop-1,6)+1));
-% 
-% imagesc(img); colormap(gray);
-    
+l=60;
 
+imgs_cpstes_princ = zeros(l,N);         % vecteurs omega
+imgs_cpstes_princ_centr = zeros(l,N);   % vecteurs omega centres
+% composantes principales des images
+for loop=1:N
+    imgs_cpstes_princ(:,loop) = main_comp(data_trn(:,loop), X_mean_emp, U, l);
+end
 
+% Moyennes empiriques
+card = size_cls_trn(1);
+mean = zeros(l,Nc);
+interval = 1:card;
+for loop = 1:Nc
+    card = size_cls_trn(loop);
+    mean(:,loop) = 1/card * sum(imgs_cpstes_princ(:,interval),2);
+    imgs_cpstes_princ_centr(:,interval) = imgs_cpstes_princ(:,interval) - mean(:,loop);
+    interval=interval+card;
+end
 
-% 
-% l = 10; % 低维 % 对6个不同的图像进行低维投射
-% recons = [];
-% UL = U(:,1:10);
+%covariance empirique
+sigma = zeros(60,60);
 
+for i=1:N
+    sigma = sigma + imgs_cpstes_princ(:,i) * imgs_cpstes_princ(:,i).';
+end
 
+sigma = sigma/N;
+sigma_inv = sigma^(-1);
 
-% for i = 1:60
-%     for j = 1:l
-%         recons(:,i) = recons(:,i) + U(:,j)'*X(:,i)*U(:,j);
-%     end
-% end
-% % recons = recons + mean_face_ligne;
-% % recons_schema = reshape(recons,192,168);
-% % figure,
-% % subplot(321);
-% % imagesc(recons_schema);
-% % colormap(gray)
-% % 
-% % subplot(322)
-% % image_fisrt = reshape(data_trn(:,1),192,168);
-% % imagesc(image_fisrt);
-% % colormap(gray);
-% % 
-
-
-
-    
+% extraction des individus
+individus = [1, 21, 51];
+individus_imgs = data_trn(:,individus:individus+card-1);
+individus_means_imgs = [mean(:,1) mean(:,3) mean(:,6)];
 
 
-%Display the database
-% F = zeros(192*Nc,168*max(size_cls_trn));
-% for i=1:Nc
-%     for j=1:size_cls_trn(i)
-%           pos = sum(size_cls_trn(1:i-1))+j;
-%           F(192*(i-1)+1:192*i,168*(j-1)+1:168*j) = reshape(data_trn(:,pos),[192,168]);
-%     end
-% end
-% figure;
-% imagesc(F);
-% colormap(gray);
-% axis off;
+legendes = ["Image 1","Image 21","Image 51","Moyenne classe 1","Moyenne classe 3","Moyenne classe 6"];
+
+labels=["Projection onto u_1",
+         "Projection onto u_2",
+         "Projection onto u_3",
+         "Projection onto u_4",
+         "Projection onto u_5"];
+
+figure(6)
+
+for loop=1:4
+    subplot(2,2,loop)
+    plot(imgs_cpstes_princ(individus(1),loop),imgs_cpstes_princ(individus(1),loop+1), '* ');
+    hold on;
+    plot(imgs_cpstes_princ(individus(2),loop),imgs_cpstes_princ(individus(2),loop+1), '* ');
+    plot(imgs_cpstes_princ(individus(3),loop),imgs_cpstes_princ(individus(3),loop+1), '* ');
+    plot(mean(individus(1),loop),mean(individus(1),loop+1), '+ ');
+    plot(mean(individus(2),loop),mean(individus(2),loop+1), '+ ');
+    plot(mean(individus(3),loop),mean(individus(3),loop+1), '+ ');
+    xlabel(labels(loop));
+    ylabel(labels(loop+1));
+    legend(legendes);
+end
+
+%% CLASSIFIEUR GAUSSIEN
+
+err=0;
+err_rate=0;
+
+for idx=1:60
+    img_to_classify = data_trn(:,idx); % pour tester
+    img_mc = main_comp(img_to_classify, X_mean_emp, U, 60);
+
+    pred = zeros(6,1);
+    for i=1:Nc % faut trouver pour arreter les boucles for
+        pred(i) = (img_mc - mean(:,i)).' * sigma_inv * (img_mc - mean(:,i));
+    end
+
+    [~,class] = min(pred);
+    answer = floor((idx-1)/10)+1;
+    fprintf("L'image %d est dans la classe %d\n",idx,class);
+    if class~=answer
+        err=err+1;
+        fprintf("ERREUR! La classe attendue etait %d\n",answer);
+    end
+end
+
+err_rate = err/N;
+fprintf("Resultat sur les donnees d'entrainement : %d erreurs (%.2f%%)\n",err,err_rate);
