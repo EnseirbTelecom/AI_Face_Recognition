@@ -90,11 +90,13 @@ end
 
 
 
-l_values=2:N/6:N; % dimension du facespace, l <= n
-Nimg = length(l_values);    % nombre d'images de classe différentes
-Nrec = Nc*Nimg;            % Nombre d'images reconstruites au total
-imgs  = zeros(P,Nrec);
+l_values=2:N/6:N;        % dimension du facespace, l <= n
+Nimg = length(l_values); % nombre d'images de classe différentes
+Nrec = Nc*Nimg;          % Nombre d'images reconstruites au total
+imgs  =  zeros(P,Nrec);
 imgsM = zeros(P,Nrec);
+
+
 
 for loop=1:Nrec
     idx = bd(ceil(loop/Nimg));
@@ -171,6 +173,7 @@ for loop=1:Nc
     legende = [legende "Classe "+cls_trn(loop)];
 end
 legend(legende);
+
 
 
 
@@ -269,7 +272,7 @@ for loop=1:4
     legend(legendes);
 end
 
-%% CLASSIFIEUR GAUSSIEN
+%% CLASSIFIEUR GAUSSIEN SUR BASE D'APPRENTISSAGE
 
 err=0;
 err_rate=0;
@@ -292,5 +295,62 @@ for idx=1:60
     end
 end
 
-err_rate = err/N;
-fprintf("Resultat sur les donnees d'entrainement : %d erreurs (%.2f%%)\n",err,err_rate);
+
+err_rate = err/N * 100;
+fprintf("Resultat sur les donnees d'apprentissage : %d erreurs (%.2f%%)\n",err,err_rate);
+
+%% CLASSIFIEUR GAUSSIEN SUR BASE DE TEST
+
+% test sets
+adr1 = './database/test1/';
+adr2 = './database/test2/';
+adr3 = './database/test3/';
+adr4 = './database/test4/';
+adr5 = './database/test5/';
+adr6 = './database/test6/';
+
+trn_adr = [adr1 ; adr2 ; adr3 ; adr4 ; adr5 ; adr6];
+
+%TST=4; % which test database to use
+for TST=1:6
+    adr = trn_adr(TST,:);
+    fld = dir(adr);
+    nb_elt = length(fld);
+    % Data matrix containing the training images in its columns
+    data_tst = [];
+    % Vector containing the class of each training image
+    lb_tst = [];
+    for i=1:nb_elt
+        if fld(i).isdir == false
+            lb_tst = [lb_tst ; str2num(fld(i).name(6:7))]; % ex: yaleB ' 01 '
+            img = double(imread([adr fld(i).name]));
+            data_tst = [data_tst img(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
+        end
+    end
+    
+    [P,nb_img] = size(data_tst);
+    
+    err=0;
+    err_rate=0;
+    for idx=1:nb_img
+        img_to_classify = data_tst(:,idx); % pour tester
+        img_mc = main_comp(img_to_classify, X_mean_emp, U, 60);
+        
+        pred = zeros(6,1);
+        for i=1:Nc % faut trouver pour arreter les boucles for
+            pred(i) = (img_mc - mean(:,i)).' * sigma_inv * (img_mc - mean(:,i));
+        end
+        
+        [~,class] = min(pred);
+        answer = find(cls_trn==lb_tst(idx));
+        %fprintf("L'image %d est dans la classe %d\n",idx,class);
+        if class~=answer
+            err=err+1;
+            fprintf("ERREUR! La classe attendue etait %d\n",answer);
+        end
+    end
+    
+    err_rate = err/nb_img * 100;
+    fprintf("Resultat sur les donnees d'entrainement no.%d : %d erreurs (%.2f%%)\n",...
+        TST, err,err_rate);
+end
