@@ -175,43 +175,68 @@ legend(legende);
 
 
 %% Classifieur k-NN
-adr2 = './database/test1/yaleB09_P00A+010E+00.pgm';
-x_images_mat = reshape(double(imread(adr2)),192,168);
-x_images = reshape(x_images_mat,32256,1);
-
-
-% on choisit valeur de l
-l = 15;
-% on calculer la valeur de wx
-
-
-% calculer la distance, le prof a dit oublier la forme dans le
-% sujet,,, fait ce que il m'expliquer
-% au 1er temps, on calculer les distance de tous les images de training
-% et on faire sort de l'ordre croissant. donc on peut choisir valeur de
-% k, c'est la k valeur premier
-[Trainrows,Traincols] = size(X);
-[Testrows,Testcols] = size(x_images);
-
-
-
-for i = 1:Traincols
-    %     for j = 1:k
-    wx = Vecteur_composant_principale(l,x_images-X_mean_emp,U);
-    wx_train = Vecteur_composant_principale(l,X(:,i),U);
-    Vx(i) = sqrt(sum(wx-wx_train).^2);
+adr2 = './database/test1/';
+fld2 = dir(adr2);
+nb_elt2 = length(fld2);
+% Data matrix containing the training images in its columns
+data_trn2 = [];
+% Vector containing the class of each training image
+lb_trn2 = [];
+for i=1:nb_elt2
+    if fld2(i).isdir == false
+        lb_trn2 = [lb_trn2 ; str2num(fld2(i).name(6:7))]; % ex: yaleB ' 01 '
+        img2 = double(imread([adr2 fld2(i).name]));
+        data_trn2 = [data_trn2 img2(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
+    end
 end
-dismin = min(Vx);
-Vx_sort = sort(Vx,'ascend');
-idx_dismin = find(Vx==dismin);
-k = 5; % a choisir
+% 以上为提取test中的文件
 
-[class, class_decide] = return_class(k,Vx_sort,Vx,lines,cls_trn);
+% 以下为将判断数据与实际数据进行比对
 
+for j = 1 : nb_elt2 -2  
+
+%     x_images_mat = reshape(data_trn(:,j),192,168)
+    
+    x_images = reshape(data_trn2(:,j),32256,1);
+    
+    % on choisit valeur de l
+    l = 15;
+    % on calculer la valeur de wx
+    
+    
+    % calculer la distance, le prof a dit oublier la forme dans le
+    % sujet,,, fait ce que il m'expliquer
+    % au 1er temps, on calculer les distance de tous les images de training
+    % et on faire sort de l'ordre croissant. donc on peut choisir valeur de
+    % k, c'est la k valeur premier
+    [Trainrows,Traincols] = size(X);
+    [Testrows,Testcols] = size(x_images);
+    
+    
+    
+    for i = 1:Traincols
+        %     for j = 1:k
+        wx = Vecteur_composant_principale(l,x_images-X_mean_emp,U);
+        wx_train = Vecteur_composant_principale(l,X(:,i),U);
+        Vx(i) = sqrt(sum(wx-wx_train).^2);
+    end
+    dismin = min(Vx);
+    Vx_sort = sort(Vx,'ascend');
+    idx_dismin = find(Vx==dismin);
+    k = 1; % a choisir
+   
+    
+    
+    [class, class_decide] = return_class(k,Vx_sort,Vx,lines,cls_trn);
+    
+    est_lb(j) = class_decide;
+end   
+ 
+true_lb = lb_trn2;
 % true_lb = 
 % 
 % % confmat
-% [C,err_rate] = confmat(true_lb,est_lb)
+[C,err_rate_knn] = confmat(true_lb,est_lb');
 
 
 %% pré-classifieur gaussien
