@@ -17,7 +17,7 @@ for i=1:nb_elt
     if fld(i).isdir == false
         lb_trn = [lb_trn ; str2num(fld(i).name(6:7))]; % ex: yaleB ' 01 '
         img = double(imread([adr fld(i).name]));
-        data_trn = [data_trn img(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
+        data_trn = [data_trn img(:)];
     end
 end
 % Size of the training set
@@ -28,7 +28,7 @@ data_trn = data_trn(:,I); %
 [cls_trn,bd,~] = unique(lb_trn); %
 Nc = length(cls_trn);
 % Number of training images in each class
-size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  % 每类图片有多少个
+size_cls_trn = [bd(2:Nc)-bd(1:Nc-1);N-bd(Nc)+1];  
 
 lines = max(size_cls_trn); % no. of lines per subplot
 cols  = Nc;                % no. of columns per subplot
@@ -42,7 +42,7 @@ R_gram = X' * X; % 60 * 60
 % [eigenvector,eigenvalue]=eigs(R,60);
 
 [eigenvector,eigenvalue]=eigs(R_gram,N);
-U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % 特征脸 eigenface
+U = X * eigenvector * (eigenvector'*X'*X*eigenvector)^(-0.5); % eigenface
 
 U = real(U);
 
@@ -195,7 +195,7 @@ for i=1:nb_tst
     if fld2(i).isdir == false
         lb_tst = [lb_tst ; str2num(fld2(i).name(6:7))]; % ex: yaleB ' 01 '
         img2 = double(imread([adr2 fld2(i).name]));
-        data_tst = [data_tst img2(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
+        data_tst = [data_tst img2(:)]; % 
     end
 end
 [P_tst,N_tst] = size(data_tst); %32256 - 42
