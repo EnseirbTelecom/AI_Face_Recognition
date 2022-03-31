@@ -181,8 +181,9 @@ legend(legende);
 adr2 = './database/test1/yaleB09_P00A+010E+00.pgm';
 x_images_mat = reshape(double(imread(adr2)),192,168);
 x_images = reshape(x_images_mat,32256,1);
-
-
+% teest = 1
+% x_images = data_trn(:,23);
+%  x_images_mat = reshape(x_images,192,168);
 % on choisit valeur de l
 l = 15;
 % on calculer la valeur de wx
@@ -207,7 +208,7 @@ end
 dismin = min(Vx);
 Vx_sort = sort(Vx,'ascend');
 idx_dismin = find(Vx==dismin);
-k = 5; % a choisir
+k = 3; % a choisir
 
 [class, class_decide] = return_class(k,Vx_sort,Vx,lines,cls_trn);
 

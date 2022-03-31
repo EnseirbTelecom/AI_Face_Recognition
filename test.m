@@ -175,7 +175,7 @@ legend(legende);
 
 
 %% Classifieur k-NN
-adr2 = './database/test1/';
+adr2 = './database/training1/';
 fld2 = dir(adr2);
 nb_elt2 = length(fld2);
 % Data matrix containing the training images in its columns
@@ -200,7 +200,7 @@ for j = 1 : nb_elt2 -2
     x_images = reshape(data_trn2(:,j),32256,1);
     
     % on choisit valeur de l
-    l = 15;
+    l = 20;
     % on calculer la valeur de wx
     
     
@@ -223,7 +223,7 @@ for j = 1 : nb_elt2 -2
     dismin = min(Vx);
     Vx_sort = sort(Vx,'ascend');
     idx_dismin = find(Vx==dismin);
-    k = 1; % a choisir
+    k = 3; % a choisir
    
     
     
