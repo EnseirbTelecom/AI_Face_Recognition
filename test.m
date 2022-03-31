@@ -48,43 +48,43 @@ U = real(U);
 
 
 
-figure(1)
-sgtitle("The eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
-% affichage des eigenfaces
-nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
-currClass    = 1;                % classe a afficher
-offset       = 1;                % decalage dans la classe
-for i = 1:N
-    if i>nextBoundary
-        currClass = currClass+1;
-        nextBoundary = nextBoundary + size_cls_trn();
-        offset=1;
-    end
-    subplot(cols,lines,(currClass-1)*lines+offset);
-    imagesc(U(:,i));
-    colormap(gray);
-    offset=offset+1;
-end
-
-figure(2)
-sgtitle("Reshaped eigenfaces");
-
-nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
-currClass    = 1;                % classe a afficher
-offset       = 1;                % decalage dans la classe
-for i = 1:N
-    if i>nextBoundary
-        currClass = currClass+1;
-        nextBoundary = nextBoundary + size_cls_trn();
-        offset=1;
-    end
-    subplot(cols,lines,(currClass-1)*lines+offset);
-    img = U(:,i);
-    img = reshape(img,192,168);
-    imagesc(img);
-    colormap(gray);
-    offset=offset+1;
-end
+% figure(1)
+% sgtitle("The eigenvectors of U"); % Peut ne pas fonctionner si Matlab < R2018b
+% % affichage des eigenfaces
+% nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
+% currClass    = 1;                % classe a afficher
+% offset       = 1;                % decalage dans la classe
+% for i = 1:N
+%     if i>nextBoundary
+%         currClass = currClass+1;
+%         nextBoundary = nextBoundary + size_cls_trn();
+%         offset=1;
+%     end
+%     subplot(cols,lines,(currClass-1)*lines+offset);
+%     imagesc(U(:,i));
+%     colormap(gray);
+%     offset=offset+1;
+% end
+% 
+% figure(2)
+% sgtitle("Reshaped eigenfaces");
+% 
+% nextBoundary = size_cls_trn(1);  % indice auquel on change de classe
+% currClass    = 1;                % classe a afficher
+% offset       = 1;                % decalage dans la classe
+% for i = 1:N
+%     if i>nextBoundary
+%         currClass = currClass+1;
+%         nextBoundary = nextBoundary + size_cls_trn();
+%         offset=1;
+%     end
+%     subplot(cols,lines,(currClass-1)*lines+offset);
+%     img = U(:,i);
+%     img = reshape(img,192,168);
+%     imagesc(img);
+%     colormap(gray);
+%     offset=offset+1;
+% end
 
 %% RECONSTRUCTION DES IMAGES
 
@@ -112,131 +112,161 @@ ratio = imgvalue./imgvalue_original;
 ratio = reshape(ratio,Nimg,Nc).';
 
 
-% display
-f = figure(3);
-imagesc(imgs);
-% Changement d'axes
-ax = get(f,'Children'); % on extrait l'objet Axis de la figure
-
-% intervalles de ticks pour qu'ils soient centres
-Xticks = 84:168:1008;
-Yticks = 96:192:1152;
-
-% on change les ticks sur les axes X et Y
-ax.XTick = Xticks;
-ax.YTick = Yticks;
-
-% On extrait les objets NumericRulers qui correspondent aux axes
-XA = get(ax,'XAxis');
-YA = get(ax,'YAxis');
-
-% On change le texte affiche sur l'axe pour les valeurs souhaitees
-XA.TickLabels = l_values;
-YA.TickLabels = cls_trn;
-
-colormap(gray);
-title("Reconstruction test");
-ylabel("Class of the image");
-xlabel("Dimension of the facespace");
-
-% display
-f = figure(4);
-imagesc(imgsM);
-
-% Changement d'axes
-ax = get(f,'Children'); % on extrait l'objet Axis de la figure
-
-% on change les ticks sur les axes X et Y
-ax.XTick = Xticks;
-ax.YTick = Yticks;
-
-% On extrait les objets NumericRulers qui correspondent aux axes
-XA = get(ax,'XAxis');
-YA = get(ax,'YAxis');
-
-% On change le texte affiche sur l'axe pour les valeurs souhaitees
-XA.TickLabels = l_values;
-YA.TickLabels = cls_trn;
-
-colormap(gray);
-title("Reconstruction test with recentering");
-ylabel("Class of the image");
-xlabel("Dimension of the facespace");
-
-
-figure(5)
-plot(l_values,ratio);
-legende=[];
-for loop=1:Nc
-    legende = [legende "Classe "+cls_trn(loop)];
-end
-legend(legende);
+% % display
+% f = figure(3);
+% imagesc(imgs);
+% % Changement d'axes
+% ax = get(f,'Children'); % on extrait l'objet Axis de la figure
+% 
+% % intervalles de ticks pour qu'ils soient centres
+% Xticks = 84:168:1008;
+% Yticks = 96:192:1152;
+% 
+% % on change les ticks sur les axes X et Y
+% ax.XTick = Xticks;
+% ax.YTick = Yticks;
+% 
+% % On extrait les objets NumericRulers qui correspondent aux axes
+% XA = get(ax,'XAxis');
+% YA = get(ax,'YAxis');
+% 
+% % On change le texte affiche sur l'axe pour les valeurs souhaitees
+% XA.TickLabels = l_values;
+% YA.TickLabels = cls_trn;
+% 
+% colormap(gray);
+% title("Reconstruction test");
+% ylabel("Class of the image");
+% xlabel("Dimension of the facespace");
+% 
+% % display
+% f = figure(4);
+% imagesc(imgsM);
+% 
+% % Changement d'axes
+% ax = get(f,'Children'); % on extrait l'objet Axis de la figure
+% 
+% % on change les ticks sur les axes X et Y
+% ax.XTick = Xticks;
+% ax.YTick = Yticks;
+% 
+% % On extrait les objets NumericRulers qui correspondent aux axes
+% XA = get(ax,'XAxis');
+% YA = get(ax,'YAxis');
+% 
+% % On change le texte affiche sur l'axe pour les valeurs souhaitees
+% XA.TickLabels = l_values;
+% YA.TickLabels = cls_trn;
+% 
+% colormap(gray);
+% title("Reconstruction test with recentering");
+% ylabel("Class of the image");
+% xlabel("Dimension of the facespace");
+% 
+% 
+% figure(5)
+% plot(l_values,ratio);
+% legende=[];
+% for loop=1:Nc
+%     legende = [legende "Classe "+cls_trn(loop)];
+% end
+% legend(legende);
 
 
 
 %% Classifieur k-NN
-adr2 = './database/training1/';
+k=5;
+l=15;
+
+% Constitution d'une base de donnees d'entrainement
+Proj_trn = zeros(l,N);
+for i=1:N
+    Proj_trn(:,i)=main_comp(data_trn(:,i), X_mean_emp, U, l);
+end
+
+
+%% Classifieur k-NN
+
+adr2 = './database/test1/';
+
 fld2 = dir(adr2);
-nb_elt2 = length(fld2);
-% Data matrix containing the training images in its columns
-data_trn2 = [];
-% Vector containing the class of each training image
-lb_trn2 = [];
-for i=1:nb_elt2
+nb_tst = length(fld2);
+% Matrice contenant toutes les images de test
+data_tst = [];
+% Vecteur des classes des images
+lb_tst = [];
+for i=1:nb_tst
     if fld2(i).isdir == false
-        lb_trn2 = [lb_trn2 ; str2num(fld2(i).name(6:7))]; % ex: yaleB ' 01 '
+        lb_tst = [lb_tst ; str2num(fld2(i).name(6:7))]; % ex: yaleB ' 01 '
         img2 = double(imread([adr2 fld2(i).name]));
-        data_trn2 = [data_trn2 img2(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
+        data_tst = [data_tst img2(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
     end
 end
-% 以上为提取test中的文件
+[P_tst,N_tst] = size(data_tst);
 
-% 以下为将判断数据与实际数据进行比对
-
-for j = 1 : nb_elt2 -2  
-
-%     x_images_mat = reshape(data_trn(:,j),192,168)
-    
-    x_images = reshape(data_trn2(:,j),32256,1);
-    
-    % on choisit valeur de l
-    l = 20;
-    % on calculer la valeur de wx
-    
-    
-    % calculer la distance, le prof a dit oublier la forme dans le
-    % sujet,,, fait ce que il m'expliquer
-    % au 1er temps, on calculer les distance de tous les images de training
-    % et on faire sort de l'ordre croissant. donc on peut choisir valeur de
-    % k, c'est la k valeur premier
-    [Trainrows,Traincols] = size(X);
-    [Testrows,Testcols] = size(x_images);
-    
-    
-    
-    for i = 1:Traincols
-        %     for j = 1:k
-        wx = Vecteur_composant_principale(l,x_images-X_mean_emp,U);
-        wx_train = Vecteur_composant_principale(l,X(:,i),U);
-        Vx(i) = sqrt(sum(wx-wx_train).^2);
-    end
-    dismin = min(Vx);
-    Vx_sort = sort(Vx,'ascend');
-    idx_dismin = find(Vx==dismin);
-    k = 3; % a choisir
-   
-    
-    
-    [class, class_decide] = return_class(k,Vx_sort,Vx,lines,cls_trn);
-    
-    est_lb(j) = class_decide;
-end   
- 
-true_lb = lb_trn2;
-% true_lb = 
 % 
-% % confmat
-[C,err_rate_knn] = confmat(true_lb,est_lb');
+% for j = 1 : nb_elt2 -2  
+% 
+% %     x_images_mat = reshape(data_trn(:,j),192,168)
+%     
+%     x_images = reshape(data_trn2(:,j),32256,1);
+%     
+%     % on choisit valeur de l
+%     l = 20;
+%     % on calculer la valeur de wx
+%     
+%     
+%     % calculer la distance, le prof a dit oublier la forme dans le
+%     % sujet,,, fait ce que il m'expliquer
+%     % au 1er temps, on calculer les distance de tous les images de training
+%     % et on faire sort de l'ordre croissant. donc on peut choisir valeur de
+%     % k, c'est la k valeur premier
+%     [Trainrows,Traincols] = size(X);
+%     [Testrows,Testcols] = size(x_images);
+%     
+%     
+%     
+%     for i = 1:Traincols
+%         %     for j = 1:k
+%         wx = Vecteur_composant_principale(l,x_images-X_mean_emp,U);
+%         wx_train = Vecteur_composant_principale(l,X(:,i),U);
+%         Vx(i) = sqrt(sum(wx-wx_train).^2);
+%     end
+%     dismin = min(Vx);
+%     Vx_sort = sort(Vx,'ascend');
+%     idx_dismin = find(Vx==dismin);
+%     k = 3; % a choisir
+
+err=0;
+for j=1:N_tst
+    % on extrait l'image a classifier
+    img_to_classify = main_comp(data_tst(:,j),X_mean_emp,U,l);
+    distances=zeros(1,N);
+    % On calcule sa distance a toutes les images de la base d'entrainement
+    for i=1:N
+        distances(1,i) = norm(img_to_classify - Proj_trn(:,i), 2);
+    end
+
+    
+    % On extrait les k distances minimales
+    [B,I] = mink(distances,k);
+
+    % On fait voter les images pointees par la liste d'indices I
+    classes = zeros(1,Nc);
+    for i=1:6
+        lb = cls_trn(i);
+        classes(i) = sum(lb_trn(I)==lb);
+    end
+
+    [~,idmax] = max(classes);
+    vote = cls_trn(idmax);
+    % Verification et mesure du nombre d'erreurs
+    if vote ~= lb_tst(j)
+        err=err+1;
+    end
+end
+
+fprintf("err: %d\n",err);
 
 
 %% pré-classifieur gaussien
