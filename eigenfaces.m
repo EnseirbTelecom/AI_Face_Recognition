@@ -86,6 +86,12 @@ U = real(U);
 %     offset=offset+1;
 % end
 
+
+figure(2)
+imagesc(reshape(X_mean_emp,192,168))
+colormap(gray)
+title("Mean face")
+
 %% RECONSTRUCTION DES IMAGES
 
 l_values=2:N/6:N;        % dimension du facespace, l <= n
@@ -94,20 +100,24 @@ Nrec = Nc*Nimg;          % Nombre d'images reconstruites au total
 imgs  = zeros(P,Nrec);
 imgsM = zeros(P,Nrec);
 
+
 for loop=1:Nrec
     idx = bd(ceil(loop/Nimg));
     [img, imgM]   = eigenfaces_builder(data_trn(:,idx), U, l_values(mod(loop-1,Nimg)+1), X_mean_emp);
     imgs(:,loop)  = img;
     imgsM(:,loop) = imgM;
-    imgvalue(:,loop) = imgs(:,loop)'*imgs(:,loop);
-    imgvalue_original(:,loop) = data_trn(:,idx)'*data_trn(:,idx);
-end
+%     imgvalue(:,loop) = imgs(:,loop)'*imgs(:,loop);
+%     imgvalue_original(:,loop) = data_trn(:,idx)'*data_trn(:,idx);
+    end
+
 
 
 imgs = reshape_imgs(imgs, Nimg,Nc);
 imgsM = reshape_imgs(imgsM,Nimg,Nc);
-ratio = imgvalue./imgvalue_original;
-ratio = reshape(ratio,Nimg,Nc).';
+% ratio = imgvalue./imgvalue_original;
+% ratio = reshape(ratio,Nimg,Nc).';
+
+
 
 % Determination du l optimal
 
@@ -271,7 +281,7 @@ for loop = 1:Nc
 end
 
 %covariance empirique
-sigma = zeros(60,60);
+sigma = zeros(l,l);
 
 for i=1:N
     sigma = sigma + imgs_cpstes_princ(:,i) * imgs_cpstes_princ(:,i).';
@@ -281,7 +291,7 @@ sigma = sigma/N;
 sigma_inv = sigma^(-1);
 
 % extraction des individus
-individus = [1, 21, 51];
+individus = [1:10, 21:30, 51:60];
 individus_imgs = data_trn(:,individus:individus+card-1);
 individus_means_imgs = [mean(:,1) mean(:,3) mean(:,6)];
 
@@ -298,29 +308,30 @@ figure(6)
 
 for loop=1:4
     subplot(2,2,loop)
-    plot(imgs_cpstes_princ(individus(1),loop),imgs_cpstes_princ(individus(1),loop+1), '* ');
+    plot(imgs_cpstes_princ(loop,individus(1:10)),imgs_cpstes_princ(loop+1,individus(1:10)), 'r* ');
     hold on;
-    plot(imgs_cpstes_princ(individus(2),loop),imgs_cpstes_princ(individus(2),loop+1), '* ');
-    plot(imgs_cpstes_princ(individus(3),loop),imgs_cpstes_princ(individus(3),loop+1), '* ');
-    plot(mean(individus(1),loop),mean(individus(1),loop+1), '+ ');
-    plot(mean(individus(2),loop),mean(individus(2),loop+1), '+ ');
-    plot(mean(individus(3),loop),mean(individus(3),loop+1), '+ ');
+    plot(imgs_cpstes_princ(loop, individus(11:20)),imgs_cpstes_princ(loop+1,individus(11:20)), 'g* ');
+    plot(imgs_cpstes_princ(loop, individus(21:30)),imgs_cpstes_princ(loop+1,individus(21:30)), 'b* ');
+    plot(mean(loop, 1),mean(loop+1,1), 'r+ ');
+    plot(mean(loop, 3),mean(loop+1,3), 'g+ ');
+    plot(mean(loop, 6),mean(loop+1,6), 'b+ ');
     xlabel(labels(loop));
     ylabel(labels(loop+1));
-    legend(legendes);
+    %legend(legendes);
 end
+
 
 %% CLASSIFIEUR GAUSSIEN
 
 err=0;
 err_rate=0;
 
-for idx=1:60
+for idx=1:N
     img_to_classify = data_trn(:,idx); % pour tester
-    img_mc = main_comp(img_to_classify, X_mean_emp, U, 60);
+    img_mc = main_comp(img_to_classify, X_mean_emp, U, l);
     
     pred = zeros(6,1);
-    for i=1:Nc % faut trouver pour arreter les boucles for
+    for i=1:Nc 
         pred(i) = (img_mc - mean(:,i)).' * sigma_inv * (img_mc - mean(:,i));
     end
     
