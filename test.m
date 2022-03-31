@@ -184,11 +184,7 @@ for i=1:N
     Proj_trn(:,i)=main_comp(data_trn(:,i), X_mean_emp, U, l);
 end
 
-
-%% Classifieur k-NN
-
-adr2 = './database/test1/';
-
+adr2 = './database/test3/';
 fld2 = dir(adr2);
 nb_tst = length(fld2);
 % Matrice contenant toutes les images de test
@@ -202,51 +198,17 @@ for i=1:nb_tst
         data_tst = [data_tst img2(:)]; % 将 每个192*168的文件读取成32256 的数字， 然后存储, 总共60个文件
     end
 end
-[P_tst,N_tst] = size(data_tst);
-
-% 
-% for j = 1 : nb_elt2 -2  
-% 
-% %     x_images_mat = reshape(data_trn(:,j),192,168)
-%     
-%     x_images = reshape(data_trn2(:,j),32256,1);
-%     
-%     % on choisit valeur de l
-%     l = 20;
-%     % on calculer la valeur de wx
-%     
-%     
-%     % calculer la distance, le prof a dit oublier la forme dans le
-%     % sujet,,, fait ce que il m'expliquer
-%     % au 1er temps, on calculer les distance de tous les images de training
-%     % et on faire sort de l'ordre croissant. donc on peut choisir valeur de
-%     % k, c'est la k valeur premier
-%     [Trainrows,Traincols] = size(X);
-%     [Testrows,Testcols] = size(x_images);
-%     
-%     
-%     
-%     for i = 1:Traincols
-%         %     for j = 1:k
-%         wx = Vecteur_composant_principale(l,x_images-X_mean_emp,U);
-%         wx_train = Vecteur_composant_principale(l,X(:,i),U);
-%         Vx(i) = sqrt(sum(wx-wx_train).^2);
-%     end
-%     dismin = min(Vx);
-%     Vx_sort = sort(Vx,'ascend');
-%     idx_dismin = find(Vx==dismin);
-%     k = 3; % a choisir
+[P_tst,N_tst] = size(data_tst); %32256 - 42
 
 err=0;
 for j=1:N_tst
     % on extrait l'image a classifier
-    img_to_classify = main_comp(data_tst(:,j),X_mean_emp,U,l);
+    img_to_classify = main_comp(data_tst(:,j),X_mean_emp,U,l); % wx
     distances=zeros(1,N);
     % On calcule sa distance a toutes les images de la base d'entrainement
     for i=1:N
-        distances(1,i) = norm(img_to_classify - Proj_trn(:,i), 2);
+        distances(1,i) = norm(img_to_classify - Proj_trn(:,i), 2); %vx
     end
-
     
     % On extrait les k distances minimales
     [B,I] = mink(distances,k);
@@ -260,12 +222,14 @@ for j=1:N_tst
 
     [~,idmax] = max(classes);
     vote = cls_trn(idmax);
+    votes(:,j) = vote;
     % Verification et mesure du nombre d'erreurs
     if vote ~= lb_tst(j)
         err=err+1;
     end
 end
 
+[C,err_rate_knn] = confmat(lb_tst,votes')
 fprintf("err: %d\n",err);
 
 
