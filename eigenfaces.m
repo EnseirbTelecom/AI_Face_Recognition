@@ -88,11 +88,9 @@ U = real(U);
 
 %% RECONSTRUCTION DES IMAGES
 
-
-
-l_values=2:N/6:N; % dimension du facespace, l <= n
-Nimg = length(l_values);    % nombre d'images de classe différentes
-Nrec = Nc*Nimg;            % Nombre d'images reconstruites au total
+l_values=2:N/6:N;        % dimension du facespace, l <= n
+Nimg = length(l_values); % nombre d'images de classe différentes
+Nrec = Nc*Nimg;          % Nombre d'images reconstruites au total
 imgs  = zeros(P,Nrec);
 imgsM = zeros(P,Nrec);
 
@@ -110,6 +108,23 @@ imgs = reshape_imgs(imgs, Nimg,Nc);
 imgsM = reshape_imgs(imgsM,Nimg,Nc);
 ratio = imgvalue./imgvalue_original;
 ratio = reshape(ratio,Nimg,Nc).';
+
+% Determination du l optimal
+
+K_l=zeros(1,N);          % valeur du ratio de reconstruction
+proj_value = zeros(1,N); % valeur de l'énergie de projection
+tot_energy = zeros(1,N); % energie totale de chaque image
+for l=1:N
+    for imgidx=1:N
+        [img, ~]   = eigenfaces_builder(data_trn(:,imgidx), U, l, X_mean_emp);
+        proj_value(l) = img'*img;
+        tot_energy(l) = data_trn(:,imgidx)'*data_trn(:,imgidx);
+    end
+    K_l(l) = (1/N * sum(proj_value))/(1/N * sum(tot_energy));
+end
+
+l_valid = find(K_l>.9);
+l_opti = min(l_valid);
 
 
 % % display
@@ -164,19 +179,16 @@ ratio = reshape(ratio,Nimg,Nc).';
 % xlabel("Dimension of the facespace");
 % 
 % 
-% figure(5)
-% plot(l_values,ratio);
-% legende=[];
-% for loop=1:Nc
-%     legende = [legende "Classe "+cls_trn(loop)];
-% end
-% legend(legende);
+figure(5)
+plot(1:N,K_l);
+title("Evolution du ratio de reconstruction en fonction de la dimension du facespace");
+
 
 
 
 %% Classifieur k-NN
-k=5;
-l=15;
+k_vals=[2 5 10];
+l=l_opti;
 
 % Constitution d'une base de donnees d'entrainement
 Proj_trn = zeros(l,N);
@@ -184,58 +196,61 @@ for i=1:N
     Proj_trn(:,i)=main_comp(data_trn(:,i), X_mean_emp, U, l);
 end
 
-adr2 = './database/test3/';
-fld2 = dir(adr2);
-nb_tst = length(fld2);
-% Matrice contenant toutes les images de test
-data_tst = [];
-% Vecteur des classes des images
-lb_tst = [];
-for i=1:nb_tst
-    if fld2(i).isdir == false
-        lb_tst = [lb_tst ; str2num(fld2(i).name(6:7))]; % ex: yaleB ' 01 '
-        img2 = double(imread([adr2 fld2(i).name]));
-        data_tst = [data_tst img2(:)]; % 
+Conf = zeros(6,6,3);
+for loop = 1:3
+    k=k_vals(loop);
+    adr2 = './database/test3/';
+    fld2 = dir(adr2);
+    nb_tst = length(fld2);
+    % Matrice contenant toutes les images de test
+    data_tst = [];
+    % Vecteur des classes des images
+    lb_tst = [];
+    for i=1:nb_tst
+        if fld2(i).isdir == false
+            lb_tst = [lb_tst ; str2num(fld2(i).name(6:7))]; % ex: yaleB ' 01 '
+            img2 = double(imread([adr2 fld2(i).name]));
+            data_tst = [data_tst img2(:)]; % 
+        end
     end
+    [P_tst,N_tst] = size(data_tst); %32256 - 42
+
+    err=0;
+    for j=1:N_tst
+        % on extrait l'image a classifier
+        img_to_classify = main_comp(data_tst(:,j),X_mean_emp,U,l); % wx
+        distances=zeros(1,N);
+        % On calcule sa distance a toutes les images de la base d'entrainement
+        for i=1:N
+            distances(1,i) = norm(img_to_classify - Proj_trn(:,i), 2); %vx
+        end
+
+        % On extrait les k distances minimales
+        [B,I] = mink(distances,k);
+
+        % On fait voter les images pointees par la liste d'indices I
+        classes = zeros(1,Nc);
+        for i=1:6
+            lb = cls_trn(i);
+            classes(i) = sum(lb_trn(I)==lb);
+        end
+
+        [~,idmax] = max(classes);
+        vote = cls_trn(idmax);
+        votes(:,j) = vote;
+        % Verification et mesure du nombre d'erreurs
+        if vote ~= lb_tst(j)
+            err=err+1;
+        end
+    end
+
+    [Conf(:,:,loop),err_rate_knn] = confmat(lb_tst,votes');
+    fprintf("err: %d\n",err);
 end
-[P_tst,N_tst] = size(data_tst); %32256 - 42
-
-err=0;
-for j=1:N_tst
-    % on extrait l'image a classifier
-    img_to_classify = main_comp(data_tst(:,j),X_mean_emp,U,l); % wx
-    distances=zeros(1,N);
-    % On calcule sa distance a toutes les images de la base d'entrainement
-    for i=1:N
-        distances(1,i) = norm(img_to_classify - Proj_trn(:,i), 2); %vx
-    end
-    
-    % On extrait les k distances minimales
-    [B,I] = mink(distances,k);
-
-    % On fait voter les images pointees par la liste d'indices I
-    classes = zeros(1,Nc);
-    for i=1:6
-        lb = cls_trn(i);
-        classes(i) = sum(lb_trn(I)==lb);
-    end
-
-    [~,idmax] = max(classes);
-    vote = cls_trn(idmax);
-    votes(:,j) = vote;
-    % Verification et mesure du nombre d'erreurs
-    if vote ~= lb_tst(j)
-        err=err+1;
-    end
-end
-
-[C,err_rate_knn] = confmat(lb_tst,votes')
-fprintf("err: %d\n",err);
-
 
 %% pré-classifieur gaussien
 
-l=60;
+
 
 imgs_cpstes_princ = zeros(l,N);         % vecteurs omega
 imgs_cpstes_princ_centr = zeros(l,N);   % vecteurs omega centres
